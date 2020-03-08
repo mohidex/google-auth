@@ -1,5 +1,4 @@
 import os
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -24,6 +23,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'google_auth',
 ]
 
 MIDDLEWARE = [
@@ -36,7 +37,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'gauth.urls'
+ROOT_URLCONF = 'example.urls'
 
 TEMPLATES = [
     {
@@ -54,7 +55,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'gauth.wsgi.application'
+WSGI_APPLICATION = 'example.wsgi.application'
 
 
 # Database
@@ -89,4 +90,4 @@ STATIC_URL = '/static/'
 CLIENT_SECRET = os.path.join(BASE_DIR, 'client_secrets.json')
 
 # Add your scopes here
-SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly']
+SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly', 'https://www.googleapis.com/auth/drive']

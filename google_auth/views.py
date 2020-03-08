@@ -1,15 +1,20 @@
+import json
 from django.http import HttpResponse
 from django.shortcuts import redirect
 import google_auth_oauthlib.flow
 from django.conf import settings
 
-
 CLIENT_SECRETS_FILE = settings.CLIENT_SECRET
+
+with open(CLIENT_SECRETS_FILE) as f:
+    secret_json = json.load(f)
+
+
 SCOPES = settings.SCOPES
 flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE,
         scopes=SCOPES,
-        redirect_uri="http://127.0.0.1:8000/oauth2callback")
+        redirect_uri=secret_json['web'].get('redirect_uris')[0])
 
 
 def index(request):
