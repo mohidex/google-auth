@@ -90,4 +90,7 @@ STATIC_URL = '/static/'
 CLIENT_SECRET = os.path.join(BASE_DIR, 'client_secrets.json')
 
 # Add your scopes here
-SCOPES = ['https://www.googleapis.com/auth/drive.metadata.readonly', 'https://www.googleapis.com/auth/drive']
+SCOPES = [
+    'https://www.googleapis.com/auth/drive.metadata.readonly',
+    'https://www.googleapis.com/auth/drive'
+    ]

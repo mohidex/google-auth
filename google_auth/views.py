@@ -1,11 +1,14 @@
 import json
-from django.http import HttpResponse
 from django.shortcuts import redirect
 import google_auth_oauthlib.flow
 from django.conf import settings
+from django.http import JsonResponse
+from .models import GoogleAuthUser
+from .utils import get_access_token
+from django.contrib.auth.decorators import login_required
+
 
 CLIENT_SECRETS_FILE = settings.CLIENT_SECRET
-
 with open(CLIENT_SECRETS_FILE) as f:
     secret_json = json.load(f)
 
@@ -17,12 +20,16 @@ flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
         redirect_uri=secret_json['web'].get('redirect_uris')[0])
 
 
-def index(request):
-    if request.session.get('credentials'):
-        credentials = request.session.get('credentials')
-        return HttpResponse(credentials.get('token'))
-    else:
+@login_required
+def get_token(request):
+    user = GoogleAuthUser.objects.filter(user=request.user).first()
+    if not user:
         return redirect('authorize')
+    else:
+        get_access_token(request)
+        cred = request.session['credentials']
+        access_token = cred.get('access_token')
+        return JsonResponse({'access_token': access_token})
 
 
 def authorize(request):
@@ -45,15 +52,16 @@ def oauth2callback(request):
     flow.fetch_token(code=code)
     credentials = flow.credentials
     request.session['credentials'] = credentials_to_dict(credentials)
-    return redirect('home')
+    google_auth, created = GoogleAuthUser.objects.get_or_create(user=request.user)
+    google_auth.refresh_token = credentials.refresh_token
+    google_auth.save()
+    return redirect('token')
 
 
 def credentials_to_dict(credentials):
+    expiry = str(credentials.expiry.utcnow())
     return {
-            'token': credentials.token,
-            'refresh_token': credentials.refresh_token,
-            'token_uri': credentials.token_uri,
-            'client_id': credentials.client_id,
-            'client_secret': credentials.client_secret,
-            'scopes': credentials.scopes
-        }
+        'access_token': credentials.token,
+        'expiry': expiry
+    }
+
