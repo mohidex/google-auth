@@ -1,23 +1,28 @@
 import json
+import requests
 from django.shortcuts import redirect
+from django.utils import timezone
 import google_auth_oauthlib.flow
 from django.conf import settings
-from django.http import JsonResponse
 from .models import GoogleAuthUser
-from .utils import get_access_token
 from django.contrib.auth.decorators import login_required
+from .utils import has_expired, credentials_to_dict
 
 
 CLIENT_SECRETS_FILE = settings.CLIENT_SECRET
 with open(CLIENT_SECRETS_FILE) as f:
     secret_json = json.load(f)
+client_id = secret_json['web'].get('client_id')
+client_secret = secret_json['web'].get('client_secret')
+token_uri = secret_json['web'].get('token_uri')
+redirect_uri = secret_json['web'].get('redirect_uris')[0]
 
 
 SCOPES = settings.SCOPES
 flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
         CLIENT_SECRETS_FILE,
         scopes=SCOPES,
-        redirect_uri=secret_json['web'].get('redirect_uris')[0])
+        redirect_uri=redirect_uri)
 
 
 @login_required
@@ -26,10 +31,18 @@ def get_token(request):
     if not user:
         return redirect('authorize')
     else:
-        get_access_token(request)
-        cred = request.session['credentials']
-        access_token = cred.get('access_token')
-        return JsonResponse({'access_token': access_token})
+        if 'credentials' in request.session and not has_expired(request.session['credentials']):
+            cred = request.session['credentials']
+            return cred['access_token']
+        access_token, expires_in = refresh_access_token(request)
+        expired_at = timezone.datetime.now() + timezone.timedelta(seconds=expires_in)
+        expiry = str(expired_at)
+        credentials = {
+            'access_token': access_token,
+            'expiry': expiry
+        }
+        request.session['credentials'] = credentials
+        return credentials['access_token']
 
 
 def authorize(request):
@@ -58,10 +71,20 @@ def oauth2callback(request):
     return redirect('token')
 
 
-def credentials_to_dict(credentials):
-    expiry = str(credentials.expiry.utcnow())
-    return {
-        'access_token': credentials.token,
-        'expiry': expiry
+def refresh_access_token(request):
+    google_user = GoogleAuthUser.objects.filter(user=request.user).first()
+    if not google_user:
+        return redirect('authorize')
+    refresh_token = google_user.refresh_token
+    params = {
+        "grant_type": "refresh_token",
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "refresh_token": refresh_token
     }
+
+    response = requests.post(token_uri, data=params).json()
+    access_token = response.get('access_token')
+    expires_in = response.get('expires_in')
+    return access_token, expires_in
 

@@ -1,0 +1,11 @@
+<div class="content-section">
+    <form method="POST">
+        {% csrf_token %}
+        <fieldset>
+            {{ form }}
+        </fieldset>
+        <div>
+            <button type="submit">Login</button>
+        </div>
+    </form>
+</div>
