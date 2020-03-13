@@ -69,7 +69,7 @@ def oauth2callback(request):
 
 def refresh_access_token(request):
     google_user = GoogleAuthUser.objects.filter(user=request.user).first()
-    if not google_user:
+    if not google_user or google_user.refresh_token is None:
         return redirect('authorize')
     refresh_token = google_user.refresh_token
     params = {
