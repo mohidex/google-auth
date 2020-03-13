@@ -6,7 +6,7 @@ class GoogleAuthUser(models.Model):
     user = models.OneToOneField(
         User,
         on_delete=models.CASCADE,
-        related_name='token_of'
+        related_name='refresh_token_of'
     )
     refresh_token = models.CharField(max_length=255, null=True, blank=True)
 
