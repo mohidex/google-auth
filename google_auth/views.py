@@ -25,26 +25,22 @@ flow = google_auth_oauthlib.flow.Flow.from_client_secrets_file(
         redirect_uri=redirect_uri)
 
 
-@login_required
 def get_token(request):
-    user = GoogleAuthUser.objects.filter(user=request.user).first()
-    if not user:
-        return redirect('authorize')
-    else:
-        if 'credentials' in request.session and not has_expired(request.session['credentials']):
-            cred = request.session['credentials']
-            return cred['access_token']
-        access_token, expires_in = refresh_access_token(request)
-        expired_at = timezone.datetime.now() + timezone.timedelta(seconds=expires_in)
-        expiry = str(expired_at)
-        credentials = {
-            'access_token': access_token,
-            'expiry': expiry
-        }
-        request.session['credentials'] = credentials
-        return credentials['access_token']
+    if 'credentials' in request.session and not has_expired(request.session['credentials']):
+        cred = request.session['credentials']
+        return cred['access_token']
+    access_token, expires_in = refresh_access_token(request)
+    expired_at = timezone.datetime.now() + timezone.timedelta(seconds=expires_in)
+    expiry = str(expired_at)
+    credentials = {
+        'access_token': access_token,
+        'expiry': expiry
+    }
+    request.session['credentials'] = credentials
+    return credentials['access_token']
 
 
+@login_required
 def authorize(request):
     authorization_url, state = flow.authorization_url(
         access_type='offline',
@@ -68,7 +64,7 @@ def oauth2callback(request):
     google_auth, created = GoogleAuthUser.objects.get_or_create(user=request.user)
     google_auth.refresh_token = credentials.refresh_token
     google_auth.save()
-    return redirect('token')
+    return redirect('/')
 
 
 def refresh_access_token(request):
