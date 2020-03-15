@@ -84,7 +84,6 @@ STATIC_URL = '/static/'
 
 # dj-google-auth configuration
 CLIENT_SECRET = os.path.join(BASE_DIR, 'client_secrets.json')
-print(CLIENT_SECRET)
 
 # Add your scopes here
 SCOPES = [
