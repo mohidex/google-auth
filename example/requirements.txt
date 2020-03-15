@@ -1,0 +1,2 @@
+django
+git+https://github.com/msi007/google-auth.git
